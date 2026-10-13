@@ -1,38 +1,38 @@
-import { Layout } from '@/layout/layout'
-import { Button } from '@/shared/ui/kit/button'
-import { useCart } from './api/use-cart'
-import { CartHeader } from './ui/cart-header'
-import { CartList } from './ui/cart-list'
+import { Layout } from '@/layout/layout';
+import { Button } from '@/shared/ui/kit/button';
+import { CartHeader } from './ui/cart-header';
+import { cartActions, useCartMetrics, useCartList } from './api/use-cart-store';
+import { CartList } from './ui/cart-list';
 
 const CartPage = () => {
-	const { cartList, clear, recalculateCart } = useCart()
+  const cartList = useCartList();
+  const cartMetrics = useCartMetrics();
 
-	const cartSummary = recalculateCart()
-	const isCartEmpty = cartList.length === 0
+  const isCartEmpty = cartList.length === 0;
 
-	return (
-		<Layout sidebarContent={<div>sidebar</div>}>
-			<div className='flex items-center justify-between mt-7'>
-				<div className='flex items-center gap-4'>
-					<h2 className='text-[20px] font-bold'>Cart</h2>
-					{!isCartEmpty && (
-						<Button
-							variant='link'
-							onClick={clear}
-							className='text-brand-secondary'
-						>
-							Clear the cart
-						</Button>
-					)}
-				</div>
-			</div>
+  return (
+    <Layout sidebarContent={<div>sidebar</div>}>
+      <div className="mt-7 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-[20px] font-bold">Cart</h2>
+          {!isCartEmpty && (
+            <Button
+              variant="link"
+              onClick={cartActions.clear}
+              className="text-brand-secondary"
+            >
+              Clear the cart
+            </Button>
+          )}
+        </div>
+      </div>
 
-			<div className='my-5 border border-[#aec2ea] rounded-[20px] overflow-hidden bg-white'>
-				<CartHeader summary={cartSummary} />
-				<CartList cartList={cartList} />
-			</div>
-		</Layout>
-	)
-}
+      <div className="my-5 overflow-hidden rounded-[20px] border border-[#aec2ea] bg-white">
+        <CartHeader summary={cartMetrics} />
+        <CartList cartList={cartList} />
+      </div>
+    </Layout>
+  );
+};
 
-export const Component = CartPage
+export const Component = CartPage;

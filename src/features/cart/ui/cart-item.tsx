@@ -1,18 +1,16 @@
-import { href, Link } from "react-router-dom";
-import type { ICartItem } from "../api/use-cart";
-import { useCart } from "../api/use-cart";
-import { ROUTES } from "@/shared/model/routes";
-import { Button } from "@/shared/ui/kit/button";
-import { TrashIcon } from "@/shared/icons/trash-icon";
-import { QuantitySelector } from "./quantity-selector";
+import { href, Link } from 'react-router-dom';
+import { ROUTES } from '@/shared/model/routes';
+import { Button } from '@/shared/ui/kit/button';
+import { TrashIcon } from '@/shared/icons/trash-icon';
+import { QuantitySelector } from './quantity-selector';
+import type { ICartItem } from '../types/cart.types';
+import { cartActions } from '../api/use-cart-store';
 
 interface CartItemProps {
   product: ICartItem;
 }
 
 export const CartItem = ({ product }: CartItemProps) => {
-  const { removeProduct } = useCart();
-
   const itemTotalPrice = product.price * product.quantity;
 
   return (
@@ -56,7 +54,7 @@ export const CartItem = ({ product }: CartItemProps) => {
         <div className="flex items-center justify-end">
           <Button
             variant="ghost"
-            onClick={() => removeProduct(product.id)}
+            onClick={() => cartActions.removeProduct(product.id)}
             className="p-2 text-gray-400 transition-colors hover:text-brand-secondary"
             title="Remove item"
           >
