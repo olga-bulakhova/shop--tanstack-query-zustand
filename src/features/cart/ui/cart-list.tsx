@@ -1,6 +1,7 @@
-import { ContentList } from "@/shared/ui/content-list";
-import type { ICartItem } from "../api/use-cart";
-import { CartItem } from "./cart-item";
+import { ContentList } from '@/shared/ui/content-list';
+
+import { CartItem } from './cart-item';
+import type { ICartItem } from '../types/cart.types';
 
 interface CardListProps {
   cartList: ICartItem[];
