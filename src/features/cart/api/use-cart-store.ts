@@ -18,9 +18,12 @@ interface ICartActions {
 
 interface ICartState extends IInitialCartState, ICartActions {}
 
-const initialState: IInitialCartState = {
-  cart: [],
-};
+const initialState: IInitialCartState = { cart: [] };
+
+const increment = (cart: ICartItem[], productId: number): ICartItem[] =>
+  cart.map((item) =>
+    item.id === productId ? { ...item, quantity: item.quantity + 1 } : item,
+  );
 
 const cartStore: StateCreator<
   ICartState,
@@ -31,16 +34,10 @@ const cartStore: StateCreator<
   addProduct: (product) =>
     set(
       (state) => {
-        const exists = state.cart.find((item) => item.id === product.id);
+        const exists = state.cart.some((item) => item.id === product.id);
 
         if (exists) {
-          return {
-            cart: state.cart.map((item) =>
-              item.id === product.id
-                ? { ...item, quantity: item.quantity + 1 }
-                : item,
-            ),
-          };
+          return { cart: increment(state.cart, product.id) };
         }
 
         return {
@@ -51,7 +48,6 @@ const cartStore: StateCreator<
               title: product.title,
               price: product.price,
               quantity: 1,
-              total: product.price,
               thumbnail: product.thumbnail,
             },
           ],
@@ -72,13 +68,7 @@ const cartStore: StateCreator<
 
   incrementQuantity: (productId) =>
     set(
-      (state) => ({
-        cart: state.cart.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        ),
-      }),
+      (state) => ({ cart: increment(state.cart, productId) }),
       false,
       'cart/incrementQuantity',
     ),
@@ -86,9 +76,8 @@ const cartStore: StateCreator<
   decrementQuantity: (productId) =>
     set(
       (state) => {
-        const item = state.cart.find((item) => item.id === productId);
-
-        if (!item) return { cart: state.cart };
+        const item = state.cart.find((i) => i.id === productId);
+        if (!item) return {};
 
         if (item.quantity <= 1) {
           return { cart: state.cart.filter((i) => i.id !== productId) };
@@ -113,33 +102,33 @@ const useCartStore = create<ICartState>()(
       name: 'shopping-cart-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ cart: state.cart }),
+      version: 1,
     }),
   ),
 );
 
 export const useCartList = () => useCartStore((state) => state.cart);
 
-export const useCartMetrics = (): ICartResponse => {
-  return useCartStore(
+export const useCartMetrics = (): ICartResponse =>
+  useCartStore(
     useShallow((state) => {
       let total = 0;
       let totalQuantity = 0;
 
-      state.cart.forEach((item) => {
+      for (const item of state.cart) {
         const price = Number(item.price) || 0;
         const quantity = Number(item.quantity) || 0;
         total += price * quantity;
         totalQuantity += quantity;
-      });
+      }
 
       return {
-        total: Number(total.toFixed(2)) || 0,
-        totalProducts: state.cart.length || 0,
-        totalQuantity: totalQuantity || 0,
+        total: Number(total.toFixed(2)),
+        totalProducts: state.cart.length,
+        totalQuantity,
       };
     }),
   );
-};
 
 export const cartActions = {
   addProduct: (product: Product) => useCartStore.getState().addProduct(product),
