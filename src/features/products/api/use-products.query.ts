@@ -1,4 +1,4 @@
-import { useCallback, useRef, type RefCallback } from 'react';
+import { useCallback, useMemo, useRef, type RefCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { productsKeys } from './query-key.factory';
 import { productsService } from './products.service';
@@ -10,31 +10,38 @@ export const useProductsInfiniteQuery = (
 ) => {
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  const { data, isLoading, isFetchingNextPage, fetchNextPage, hasNextPage } =
-    useInfiniteQuery({
-      queryKey: category
-        ? productsKeys.filteredListWithCategory(category, { limit })
-        : productsKeys.filteredList({ limit }),
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: category
+      ? productsKeys.filteredListWithCategory(category, { limit })
+      : productsKeys.filteredList({ limit }),
 
-      initialPageParam: 0,
+    initialPageParam: 0,
 
-      queryFn: ({ pageParam }) => {
-        const fetchParams: ProductsFilters = {
-          limit,
-          skip: pageParam,
-        };
+    queryFn: ({ pageParam }) => {
+      const fetchParams: ProductsFilters = { limit, skip: pageParam };
 
-        if (category === 'all' || !category) {
-          return productsService.getList(fetchParams);
-        }
-        return productsService.getListByCategory(category, fetchParams);
-      },
+      if (category === 'all' || !category) {
+        return productsService.getList(fetchParams);
+      }
+      return productsService.getListByCategory(category, fetchParams);
+    },
 
-      getNextPageParam: (lastPage) => {
-        const nextSkip = lastPage.skip + lastPage.limit;
-        return nextSkip < lastPage.total ? nextSkip : undefined;
-      },
-    });
+    getNextPageParam: (lastPage) => {
+      const nextSkip = lastPage.skip + lastPage.limit;
+      return nextSkip < lastPage.total ? nextSkip : undefined;
+    },
+
+    staleTime: 60_000,
+  });
 
   const cursorRef: RefCallback<HTMLDivElement> = useCallback(
     (node) => {
@@ -46,11 +53,11 @@ export const useProductsInfiniteQuery = (
 
       observerRef.current = new IntersectionObserver(
         (entries) => {
-          if (entries[0].isIntersecting) {
+          if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
           }
         },
-        { threshold: 0.1 },
+        { rootMargin: '200px' },
       );
 
       observerRef.current.observe(node);
@@ -58,13 +65,19 @@ export const useProductsInfiniteQuery = (
     [fetchNextPage, hasNextPage, isFetchingNextPage],
   );
 
-  const products = data?.pages.flatMap((page) => page.products) ?? [];
+  const products = useMemo(
+    () => data?.pages.flatMap((page) => page.products) ?? [],
+    [data],
+  );
 
   return {
     products,
     isLoading,
+    isError,
+    error,
     isFetchingNextPage,
     hasNextPage,
     cursorRef,
+    refetch,
   };
 };
